@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itda.ITDA.mybatis.mapper.OrderMapper">
+	<!-- 상품 리스트 출력 -->
+	<select id="subProductList" resultType="SubProduct">
+		SELECT
+		    productid,
+		    productname,
+		    productdetail,
+		    productprice
+		FROM
+		    subproduct
+		ORDER BY productprice
+	</select>
+	
+	<!-- 선택한 상품 상세 출력 -->
+	<select id="productInfo" resultType="SubProduct">
+		SELECT
+		    productid,
+		    productname,
+		    productdetail,
+		    productprice
+		FROM
+		    subproduct
+		WHERE
+			productid = #{productId}
+	</select>
+	
+	<!-- 결제 요청에 정보 임시 저장 -->
+	<insert id="insertPayCall" parameterType="Paycall">
+		INSERT INTO PAYCALL 
+				(callNum, userId, couponCode, productId, 
+				callAmount, callPrice, callDate)
+		VALUES (callnum_seq.nextval, #{userId}, 0, #{productId}, 
+				1, #{callPrice}, SYSTIMESTAMP)
+	</insert>
+	
+	<select id="getOrderNo" resultType="String">
+		<![CDATA[
+		 SELECT callnum 
+		 FROM(
+		 		select callnum
+		 		from   paycall
+				WHERE userid = #{userId}
+				ORDER BY callDate DESC
+			)
+		where rownum = 1
+		]]>
+	</select>
+	
+	<insert id="insertPayment" parameterType="Payment">
+		INSERT INTO payment 
+			(payednum, payedmethod, ordernum, payeddate, 
+			payedprice, payeduser, payerbank, payedokdate, 
+			payedstatus, payedcode, payedvat)
+		VALUES (paynum_seq.nextval, #{payedMethod}, #{orderNum}, #{payedDate}, 
+				#{payedPrice}, #{userId}, 'N', #{payedOkDate}, 
+				'Y', #{payedCode}, #{payedVat})
+	</insert>
+	
+	<!-- 유료회원 insert를 위한 값 뽑아오기 -->
+	<select id="paymentCompletUser" resultType="Payment">
+		<![CDATA[
+			SELECT
+			    payednum,
+			    payedokdate,
+			    userid,
+			    PRODUCTTERM
+			FROM
+			    (SELECT
+			        py.payednum, 
+			        py.payedokdate,
+			        pc.userid,
+			        sp.PRODUCTTERM,
+			        ROW_NUMBER() OVER (ORDER BY py.payednum DESC) AS rnum
+			    FROM
+			        payment py
+			    JOIN paycall pc ON py.ordernum = pc.callnum
+			    JOIN subproduct sp ON pc.productid = sp.productid
+			    JOIN itda_user iu ON pc.userid = iu.userid
+			    WHERE iu.userid = #{userId})
+			WHERE rnum = 1
+		]]>
+	</select>
+	
+</mapper>

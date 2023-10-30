@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itda.ITDA.mybatis.mapper.heartMapper">
+	<!-- 좋아요 추가 -->
+	<insert id="addHeart">
+		INSERT INTO heart (id, user_id, board_num)
+		VALUES
+		(heart_seq.NEXTVAL, #{userId}, #{boardNum})
+	</insert>
+
+	<!-- 좋아요 취소 -->
+	<delete id="removeHeart">
+		DELETE FROM heart
+		WHERE user_id = #{userId} AND
+		board_num = #{boardNum}
+	</delete>
+
+	<!-- 좋아요 개수 조회 -->
+	<select id="getHeartCount" resultType="int">
+		SELECT COUNT(*)
+		FROM heart
+		WHERE board_num = #{boardNum}
+	</select>
+
+	<!-- 좋아요 상태 조회 -->
+	<select id="existsByBoardNumAndUserId" resultType="boolean">
+		SELECT CASE
+		WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+		FROM heart
+		WHERE board_num =
+		#{boardNum} AND user_id = #{userId}
+	</select>
+
+	<!-- 'chboard' 테이블의 'boardheart'를 증가시키는 메서드 -->
+	<update id="updateChBoardHeart">
+		UPDATE chboard
+		SET boardheart = boardheart + 1
+		WHERE boardnum = #{boardNum}
+	</update>
+
+	<!-- 'chboard' 테이블의 'boardheart'를 감소시키는 메서드 -->
+	<update id="decreaseChBoardHeart">
+		UPDATE chboard
+		SET boardheart = boardheart - 1
+		WHERE boardnum = #{boardNum} AND boardheart > 0
+	</update>
+
+	<delete id="deleteChBoardHeart">
+		delete from heart
+		where board_num = #{boardNum}
+	</delete>
+</mapper>

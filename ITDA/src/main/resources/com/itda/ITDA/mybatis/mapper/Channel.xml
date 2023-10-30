@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.itda.ITDA.mybatis.mapper.ChannelListMapper">
+
+	<select id="getChannelDetail" resultType="ChannelList">
+		SELECT *
+		FROM
+		CHANNELLIST
+		WHERE CHNUM = #{chnum}
+	</select>
+
+
+
+	<!-- <select id="getBoardListByBoardNum" resultType="ChBoard">
+	   <![CDATA[
+	    SELECT * FROM (
+	        SELECT cbc.chCate_Name, cb.boardNum, cb.boardTitle, cb.thumbNail, cb.intro, cb.boardDate
+	        FROM chboard cb
+	        JOIN chboardcategory cbc ON cb.chCate_Id = cbc.chCate_Id 
+	        WHERE cb.chnum = #{chnum}
+	        ORDER BY boardHeart DESC
+	    ) WHERE ROWNUM <= 20
+	    ]]>
+	</select> -->
+	
+	<select id="getBoardListByBoardNum" resultType="ChBoard">
+	   <![CDATA[
+	    SELECT * FROM (
+	        SELECT cbc.chCate_Name, cb.boardNum, cb.boardTitle, cb.thumbNail, cb.intro, cb.boardDate
+	        FROM chboard cb
+	        JOIN chboardcategory cbc ON cb.chCate_Id = cbc.chCate_Id 
+	        WHERE cb.chnum = #{chnum}
+	        ORDER BY boardHeart DESC
+	    ) WHERE ROWNUM <= 1000
+	    ]]>
+	</select>
+
+	<select id="getChannelCategory" resultType="ChBoardCategory">
+		SELECT DISTINCT
+		chCate_Id, chCate_Name
+		FROM ChBoardCategory
+		WHERE ChBoardCategory.chnum
+		= #{chnum}
+		ORDER BY chCate_Name ASC
+	</select>
+
+	<!-- <select id="getChannelCategoryCount" resultType="int"> SELECT COUNT(B.boardNum) 
+		FROM ChBoardCategory C INNER JOIN ChBoard B ON C.chCate_Id = B.chCate_Id 
+		WHERE B.chnum = #{chnum} GROUP BY C.chCate_Name </select> -->
+
+	<select id="getChannelCategoryList" resultType="ChBoardCategory">
+		SELECT * FROM
+		chboardcategory
+		WHERE chnum = #{chNum}
+		ORDER BY chcate_name
+	</select>
+
+	<!-- seller <select id="getChannelSellerDetail" resultType="ChannelList"> 
+		SELECT * FROM CHANNELLIST WHERE CHNUM = #{chnum} </select> -->
+
+	<select id="getAllChannelCategoryData" resultType="ChBoard"
+		parameterType="map">
+		<![CDATA[
+			SELECT *
+			FROM (
+			    SELECT rownum rnum, j.*
+			    FROM (
+			        SELECT chboard.*, nvl(cnt, 0) cnt,
+			               (SELECT chcate_name FROM chboardcategory c WHERE c.chcate_id = chboard.chcate_id) chcate_name
+			        FROM chboard
+			        LEFT JOIN (
+			            SELECT boardnum, COUNT(*) cnt
+			            FROM boardreply
+			            GROUP BY boardnum
+			        ) f ON chboard.boardnum = f.boardnum
+			        WHERE chboard.chnum = #{chnum}
+			        ORDER BY boardDate ${order}, chboard.boardnum DESC
+			    ) j
+			    WHERE rownum <= #{endrow}
+			)
+			WHERE rnum >= #{startrow} AND rnum <= #{endrow}
+		]]>
+	</select>
+
+	<select id="getAllChannelCategoryCount" resultType="int">
+		SELECT
+		COUNT(*) FROM chboard WHERE chnum = #{chnum}
+	</select>
+
+	<select id="getChannelCategoryData" resultType="ChBoard">
+	    <![CDATA[
+	     SELECT *
+			FROM (
+			    SELECT ROWNUM rnum, j.*
+			    FROM (
+			        SELECT *
+			        FROM chboard
+			        NATURAL JOIN chboardcategory
+			        WHERE chnum = #{chnum}
+			          AND chcate_id = #{chCate_Id}
+			          ORDER BY boardDate ${order}, boardNum DESC 
+			     ) j 
+			     WHERE ROWNUM <= #{endrow}  
+			)
+			WHERE rnum >= #{startrow} 
+	     ]]>
+	</select>
+
+	<select id="getChannelCategoryCount" resultType="int">
+		SELECT COUNT(*)
+		FROM chboard
+		WHERE chnum = #{chnum}
+		AND chCate_Id = #{chCate_Id}
+	</select>
+
+	<select id="getSellerInfo" resultType="Seller">
+		SELECT * FROM SELLER
+		WHERE
+		userId = #{userid}
+	</select>
+
+	<select id="getSellerSetting" resultType="ChannelList">
+		SELECT *
+		FROM
+		CHANNELLIST
+		WHERE CHNUM = #{chnum}
+	</select>
+
+	<update id="getSellerUpdate">
+		UPDATE channellist
+		SET chProfile = #{chProfile},
+		chName = #{chName}
+		WHERE chNum = #{chNum}
+	</update>
+
+	<insert id="saveChannelList"
+		parameterType="com.itda.ITDA.domain.ChannelList">
+		INSERT INTO channellist (chNum, ownerid, chName,
+		chprofile, chinfo, cate_id,
+		chFollow, chVisit)
+		VALUES ((select NVL(max
+		(chNum), 0) + 1 from ChannelList), #{userId},
+		#{channel},
+		#{userProfile}, #{chInfo}, '1', '0', '0')
+
+	</insert>
+
+	<select id="getChcategory" resultType="ChCategory">
+		SELECT cate_Id, cate_Name
+		FROM
+		ChCategory
+	</select>
+
+	<select id="getSellerCategory" resultType="ChBoardCategory">
+		SELECT DISTINCT
+		chCate_Id, chCate_Name
+		FROM ChBoardCategory
+		WHERE ChBoardCategory.chnum
+		= #{chnum}
+		ORDER BY chCate_Name ASC
+	</select>
+
+	<insert id="addCategory">
+		INSERT INTO chboardcategory(CHCATE_ID, chNum,
+		chCate_Name)
+		VALUES (chancate_seq.NEXTVAL, #{chnum}, #{chCate_Name})
+	</insert>
+
+
+	<select id="searchChannelsByKeyword"
+		parameterType="java.lang.String"
+		resultType="com.itda.ITDA.domain.ChannelList">
+		SELECT *
+	FROM channellist
+	WHERE chName LIKE #{search}
+		OR chinfo LIKE #{search}
+		OR cate_id LIKE #{search} <!-- cate_id에 대한 검색 조건을 추가 -->
+	</select>
+
+	<!-- mypage에서 channellist 불러오기 -->
+	<select id="myChannelList" resultType="ChannelList">
+		SELECT
+		ownerid,chnum,chname,chprofile,chinfo,chfollow,chopendate,chvisit
+		FROM
+		channellist
+		WHERE
+		ownerid = #{ownerId}
+	</select>
+
+	<update id="updateCategory">
+		UPDATE chboardcategory
+		SET chCate_Name =
+		#{chCate_Name}
+		WHERE chCate_Id = #{chCate_Id}
+	</update>
+
+	<delete id="deleteCategory">
+		delete from chboardcategory
+		where chCate_Id =
+		#{chCate_Id}
+	</delete>
+
+	<select id="getContentListDetail" resultType="ChannelList">
+		SELECT *
+		FROM
+		CHANNELLIST
+		WHERE CHNUM = #{chnum}
+	</select>
+
+	<select id="getCategoryNameList" resultType="ChBoardCategory">
+		select * from chboardcategory where chnum = #{chnum}
+	</select>
+	
+	<select id="checkChannelName" resultType="int">
+		SELECT COUNT(*)
+		FROM channellist
+		WHERE CHNUM = #{chnum} AND CHNAME = #{chName}
+	</select>
+
+	<insert id="contentInsert">
+		INSERT INTO chboard (
+		BOARDNUM, CHNUM, WRITER, BOARDTITLE,
+		BOARDHEART, CHCATE_ID, BOARDOPEN,
+		BOARDNORE, BOARDDATE, THUMBNAIL,
+		INTRO, BOARDCONTENT
+		)
+		VALUES (
+		bo_seq.nextval, #{chNum}, #{Writer}, #{boardTitle},
+		0, #{chCate_Id},'Y',
+		'Y', SYSTIMESTAMP, #{thumbNail},
+		#{intro,jdbcType=CLOB},
+		#{boardContent,jdbcType=CLOB}
+		)
+	</insert>
+	
+	<select id="getContentSellerInfo" resultType="Seller">
+		SELECT * FROM SELLER
+		WHERE
+		userId = #{userid}
+	</select>
+	
+	<select id="newContentSelect" resultType="ChBoard">
+		  SELECT *
+		    FROM (
+		        SELECT *
+		        FROM chboard
+		        WHERE chnum = #{chnum}
+		        ORDER BY boardupdate DESC
+		    )
+		    WHERE rownum = 1
+	</select>
+	
+	<select id="isSubscribed" resultType="int">
+    	SELECT COUNT(*) FROM sub WHERE userid = #{userid} AND chnum = #{chnum}
+	</select>
+
+	 <insert id="subscribe" parameterType="map">
+	   INSERT INTO sub (subsnum, userid, subchnum, subdate, usergender, userbirth)
+	   SELECT seq_sub.NEXTVAL, #{userId}, #{chnum}, SYSTIMESTAMP, userGender, userBirth
+	   FROM itda_user
+	   WHERE userId = #{userId}
+	 </insert>
+
+	 <delete id="unsubscribe" parameterType="map">
+	    DELETE FROM sub
+	    WHERE userid = #{userId} AND subchnum = #{chnum}
+	 </delete>
+	
+	<select id="getSubData" parameterType="java.util.Map" resultType="sub">
+		select subchNum, userGender, userBirth
+		from sub
+		where subchnum = #{chnum}
+	</select>
+
+	<select id="checkSubscription" parameterType="map" resultType="boolean">
+	    SELECT COUNT(*) 
+	    FROM sub
+	    WHERE userid = #{userId} AND subchnum = #{chnum}
+	</select>
+	
+	<select id="getBoardVisit" resultType="sub">
+	     SELECT COUNT(userid) as subscriberCount
+	     FROM sub 
+	     WHERE subchnum = #{subchnum}
+	</select>
+	
+	
+	<select id="getSubscriberCount" resultType="java.lang.Integer">
+	    SELECT COUNT(*) 
+	    FROM sub
+	    WHERE subchnum = #{chnum}
+	</select>
+	
+	
+
+</mapper> 
