@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/header/bootstrap.min.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/header/common.css">
 <script> var contextPath = "<%=request.getContextPath()%>";</script>
+<meta name="_csrf" content="${_csrf.token}">
+<meta name="_csrf_header" content="${_csrf.headerName}">
 <script>
 	$(function() {
 		$("#logout").click(function(event) {
@@ -66,8 +68,8 @@
 							<div class="dropdown">
 								<button class="dropbtn">
 									<c:choose>
-										<c:when test="${empty pinfo.userProfile}">
-											<img id="profile_img" src="${pageContext.request.contextPath}/image/main/login.png"/>
+										<c:when test="${ pinfo.userProfile.contains('resources')}">
+											<img id="profile_img" src="${pageContext.request.contextPath}/resources/image/main/login.png"/>
 										</c:when>
 										<c:otherwise>
 											<img id="profile_img" src="${pageContext.request.contextPath}/image/Member/${pinfo.username}${pinfo.userProfile}"

@@ -78,11 +78,6 @@
 			<div class="container_content _GRID_TEMPLATE_COLUMN _STICKY_CONTENT">
 			<div class="_TEMPLATE _LAZY_LOADING_WRAP is_hidden" data-template-id="SCS_PREMIUM_SIDEBAR_MY" data-grid-template-column-sidebar="true">
 <jsp:include page="../mypage/sidebar.jsp"></jsp:include>
-	<div class="sidebar_banner _LAZY_LOADING_ERROR_HIDE">
-		<a href="https://blog.naver.com/premiumcontents/223186087023" data-clk="my_lnb.banner">
-			<img class="_LAZY_LOADING" data-src="https://ssl.pstatic.net/static.news/image/news/m/2023/08/18/sidebar_banner.jpg" width="315" height="110" alt="">
-		</a>
-	</div>
 </div>
 <h2 class="my_title">나의 채널</h2>
 <div class="my_tab_wrap">
@@ -104,14 +99,7 @@
     	<li class="my_setting_item _MARKETING_BUTTON_WRAP">
     		<a href="${pageContext.request.contextPath}/channels/${channel.chNum}?userid=${channel.ownerId}" class="my_setting_link" data-clk="my_setmrk.chlgo">
     			<div class="my_setting_thumb">
-    							<c:choose>
-                   <c:when test="${empty channel.chProfile}">
-                      <img src="${pageContext.request.contextPath}/resources/image/common/itda_logo3.png" width="48" height="48">
-                   </c:when>
-                	<c:otherwise>
                     	<img src="${pageContext.request.contextPath}/image/MemberUpload/${channel.ownerId}${channel.chProfile}" width="48" height="48" onerror="this.parentNode.innerHTML='<span class=&quot;no_image&quot;></span>'">
-                	</c:otherwise>
-                </c:choose>
     			</div>
     			<div class="my_channel_text">
     			<div class="my_channel_name">
@@ -125,8 +113,8 @@
     				<em class="my_channel_date_title">채널 개설일</em><div class="my_channel_date_text"><fmt:formatDate value="${channel.chOpenDate}" pattern="yyyy.MM.dd" /></div>
     			</div>
     			<div class="my_subscribe_date">
-    				<em class="my_channel_date_title">채널 구독자 </em><span class="my_channel_date_text">${channel.chFollow}&nbsp;&nbsp;</span> 
-    				<em class="my_channel_date_title">채널 방문자 </em><span class="my_channel_date_text">${channel.chVisit}</span>
+    				<em class="my_channel_date_title">채널 구독자 </em><span class="my_channel_date_text">${subinfo['SUBSCRIBERCOUNT']}&nbsp;&nbsp;</span> 
+    				<%-- <em class="my_channel_date_title">채널 방문자 </em><span class="my_channel_date_text">${channel.chVisit}</span> --%>
     			</div>
 
     			</div>
@@ -303,7 +291,7 @@ $(window).on("load", function() {
 	}
 });
 </script>
-
+<jsp:include page="../include/footer.jsp"></jsp:include>
 </body>
 <script>
 var eventType = "onpageshow" in window ? "pageshow" : "load";

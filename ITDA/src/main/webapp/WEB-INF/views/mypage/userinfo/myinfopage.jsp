@@ -98,12 +98,15 @@
         <div class="profile_inner">
             <a href="#" onclick="changeImage()" class="photo">
                  <t:choose>
-                     <t:when test="${empty user.userProfile}">
+                    <t:when test="${empty user.userProfile}">
 			                <img src="https://static.nid.naver.com/images/web/user/default.png" width="84" height="84" alt="프로필 이미지">
                         </t:when>
+                    <t:when test="${user.userProfile == '/resources/image/main/login.png'}">
+                                <img id="imgThumb" src="${pageContext.request.contextPath}/resources/image/main/login.png" width="84" height="84">
+                    </t:when>
                     <t:when test="${!empty user.userProfile}">
                                 <img id="imgThumb" src="${pageContext.request.contextPath}/image/Member/${user.userId}${user.userProfile}" width="84" height="84">
-                        </t:when>
+                    </t:when>
                  </t:choose>
                      
                 <span class="photo_edit"></span>
@@ -518,7 +521,7 @@
     <input type="hidden" name="addressYn" id="isAddressYn" value="Y"/>
     <input type="hidden" name="userId" id="userId" value="${user.userId }"/>
     <input type="hidden" name="cateNameYn" id="cateNameYn" value="${user.cate_Name}"/>
-    <input type="hidden" name="userEmail" id="sestUserEmail" value=""/>
+    <input type="hidden" name="userEmail" id="setUserEmail" value=""/>
     <input type="hidden" name="sellerEmail" id="sellerUserEmail" value=""/>
     
     
@@ -683,8 +686,8 @@
                         </div>
                         <div id="myLetterEmailPhoneVerify" class="contact_edit_desc">
                             등록된 이메일 주소가 기억나지 않는다면 휴대전화 인증 후 이메일을 수정할 수 있습니다.
-                            <a href="javascript:;" class="link_come"
-                               onclick="userMobile('myLetterEmail')">
+                            <a href="javascript:;" class="link_come">
+                               <!-- onclick="userMobile('myLetterEmail')" -->
                                 <span class="text">전화번호 인증</span>
                             </a>
                         </div>
@@ -762,8 +765,8 @@
                         </div>
                         <div id="myLetterEmailPhoneVerify" class="contact_edit_desc">
                             등록된 이메일 주소가 기억나지 않는다면 휴대전화 인증 후 이메일을 수정할 수 있습니다.
-                            <a href="javascript:;" class="link_come"
-                               onclick="userMobile('myLetterEmail')">
+                            <a href="javascript:;" class="link_come">
+                              <!--  onclick="userMobile('myLetterEmail')"> -->
                                 <span class="text">전화번호 인증</span>
                             </a>
                         </div>

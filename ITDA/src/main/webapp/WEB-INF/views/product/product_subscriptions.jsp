@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
-
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <!doctype html>
 <html lang="ko" data-useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36">
 <head>
@@ -139,6 +139,11 @@ $(document).ready(function() {
     	e.preventDefault();
     	$("#fm").submit();
     })
+    
+    $(".button_back._BACK").on("click", function(e) {
+        e.preventDefault(); // 기본 동작(링크 이동)을 중지합니다.
+        window.history.back();
+    });
 });
 
  </script>

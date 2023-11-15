@@ -6,11 +6,11 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<title>결제 취소 : 잇다ID</title>
+<title>MY : 잇다ID</title>
 <script>
 		var msg = "<c:out value='${msg}'/>";
 		alert(msg);
-		location.href = "${pageContext.request.contextPath}/my/subscriptions";
+		location.href = "${pageContext.request.contextPath}/my/notification";
 </script>
 </head>
 <body>
