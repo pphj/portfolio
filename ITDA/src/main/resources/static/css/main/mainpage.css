@@ -115,8 +115,9 @@ p{
     bottom: 0;
     right: auto;
     margin: auto 0;
+    margin-bottom: 140px;
     opacity: 0.6;
-    transform: translateX(-50%);
+    transform: translateX(-2450%);
 }
 
 .right-area {
@@ -311,7 +312,7 @@ p{
 }
 
 .popular-list-img {
-    width: 120px;
+    width: 140px;
     height: 118px;
     border-radius: 5px;
     margin-left: 10px;
