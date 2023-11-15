@@ -14,11 +14,11 @@ public class WebMvcConfig implements WebMvcConfigurer{
 	@Value("${my.savepath}")
 	private String saveFolder;
 	
-//	@Value("${app.image-upload-dir.savepath}")
-//	private String saveFolder2;
-//	
-//	@Value("${app.image-upload-dir2.savepath}")
-//	private String saveFolder3;
+	@Value("${app.image-upload-dir.savepath}")
+	private String saveFolder2;
+	
+	@Value("${app.image-upload-dir2.savepath}")
+	private String saveFolder3;
 	
 	private static final String[] CLASSPATH_RESOURCE_LOCATIONS
 	= {
@@ -41,10 +41,10 @@ public class WebMvcConfig implements WebMvcConfigurer{
 		.addResourceLocations(CLASSPATH_RESOURCE_LOCATIONS);
 		registry.addResourceHandler("/upload/**")
 				.addResourceLocations(saveFolder);
-//		registry.addResourceHandler("/image/MemberUpload/**")
-//				.addResourceLocations(saveFolder2);
-//		registry.addResourceHandler("/image/Member/**")
-//		.addResourceLocations(saveFolder3);
+		registry.addResourceHandler("/image/MemberUpload/**")
+				.addResourceLocations(saveFolder2);
+		registry.addResourceHandler("/image/Member/**")
+		.addResourceLocations(saveFolder3);
 
 	}
 	
