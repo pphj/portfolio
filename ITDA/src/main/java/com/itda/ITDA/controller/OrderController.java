@@ -2,7 +2,7 @@ package com.itda.ITDA.controller;
 
 import java.security.Principal;
 import java.sql.Timestamp;
-import java.util.Calendar;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -20,12 +20,16 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 import com.itda.ITDA.domain.Amount;
+import com.itda.ITDA.domain.CouponIssue;
 import com.itda.ITDA.domain.GoodUser;
+import com.itda.ITDA.domain.KakaoCancelResponse;
 import com.itda.ITDA.domain.KakaoPayApproval;
 import com.itda.ITDA.domain.Paycall;
 import com.itda.ITDA.domain.Payment;
 import com.itda.ITDA.domain.ReadyResponse;
+import com.itda.ITDA.domain.RefundUser;
 import com.itda.ITDA.domain.SubProduct;
+import com.itda.ITDA.service.CouponService;
 import com.itda.ITDA.service.Itda_UserService;
 import com.itda.ITDA.service.OrderService;
 import com.itda.ITDA.util.Constants;
@@ -43,13 +47,17 @@ public class OrderController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
 	
+	
 	private OrderService orderService;
 	private Itda_UserService itdaUserService;
+	private CouponService couponService;
 
 	@Autowired
-	public OrderController(OrderService orderService, Itda_UserService itdaUserService) {
+	public OrderController(OrderService orderService, Itda_UserService itdaUserService,
+			CouponService couponService) {
 		this.orderService = orderService;
 		this.itdaUserService = itdaUserService;
+		this.couponService = couponService;
 
 	}
 	
@@ -74,11 +82,15 @@ public class OrderController {
 	}
 	
 	@GetMapping(value = "/subscriptions/info")
-	public String product_info(SubProduct product, Model model) {
+	public String product_info(SubProduct product, 
+								Model model) {
 
 		product.setProductId(product.getProductId());
 
 		logger.info("product.getProductId() : " + product.getProductId());
+		
+		
+		
 
 		String productId = String.valueOf(product.getProductId());
 
@@ -100,10 +112,14 @@ public class OrderController {
 	@GetMapping(value = "/subscriptions/info/order")
 	public String product_order(Principal principal, 
 								SubProduct product,
-								Model model) {
+								Model model,
+								CouponIssue couponIssue) {
 		
 		String id = principal.getName();
 		
+		
+		List<CouponIssue> myCouponList = couponService.myCouponList(id);
+		model.addAttribute("couponList", myCouponList);
 		
 		if(id == null) {
 			
@@ -127,12 +143,17 @@ public class OrderController {
 										Model model, 
 										Paycall payCall,
 										@RequestParam("total_amount") int totalAmount,
-										@RequestParam("item_name") String item_name) { // 결제 준비 컨트롤러
+										@RequestParam("item_name") String item_name,
+										@RequestParam("discount") String discountPrice,
+										@RequestParam("couponCode") String couponCode
+										) { // 결제 준비 컨트롤러
 
 		String id = principal.getName();
 		payCall.setUserId(id);
+		payCall.setCouponCode(couponCode);
 		payCall.setCallPrice(totalAmount);
 		payCall.setProductId(payCall.getProductId());
+		payCall.setCallDiscount(Integer.parseInt(discountPrice));
 
 		String callPrice = String.valueOf(payCall.getCallPrice());
 		
@@ -147,6 +168,7 @@ public class OrderController {
 		}
 		logger.info("주문정보:" + payCall);
 		logger.info("주문가격:" + totalAmount);
+		logger.info("할인가격:" + discountPrice);
 		// 카카오 결제 준비하기 - 결제요청 service 실행.
 		
 		String getOrderNo = orderService.getOrderNo(id);
@@ -155,7 +177,6 @@ public class OrderController {
 		
 		ReadyResponse readyResponse = orderService.payReady(totalAmount, item_name, getOrderNo);
 		// 요청처리후 받아온 결재고유 번호(tid)를 모델에 저장
-		
 		model.addAttribute("tid", readyResponse.getTid());
 		logger.info("결제고유 번호: " + readyResponse.getTid());
 		// Order정보를 모델에 저장
@@ -167,7 +188,6 @@ public class OrderController {
 	@GetMapping(value="/approval")
 	public String payCompleted(@RequestParam("pg_token") String pgToken, 
 								@ModelAttribute("tid") String tid, 
-								@ModelAttribute("getOrderNo") String getOrderNo,
 								Payment payment,
 								Model model,
 								Principal principal,
@@ -175,28 +195,55 @@ public class OrderController {
 		
 		logger.info("결제승인 요청을 인증하는 토큰: " + pgToken);
 		logger.info("결제고유 번호: " + tid);
-		logger.info("getOrderNo 번호: " + getOrderNo);
-
-		// 카카오 결재 요청하기
-		KakaoPayApproval approveResponse = orderService.payApprove(tid, pgToken, getOrderNo);
+		String id = principal.getName();
+		
+		// 카카오 결제 요청하기
+		KakaoPayApproval approveResponse = orderService.payApprove(tid, pgToken);
+		
+		String item_code = approveResponse.getItem_code();
+		
+		Paycall payCall = new Paycall();
+		
+		payCall.setCallNum(Integer.parseInt(item_code));
+		payCall = orderService.isOrderNo(payCall);
+		
+		if(payCall.getCallNum() == (Integer.parseInt(approveResponse.getItem_code()))) {
+			logger.info("getOrderNo & getItem_code() = " + payCall.getCallNum() + "&&" + approveResponse.getItem_code() );
+		}
 
 		if (pgToken != null && tid != null) {
 			// 5. payment 저장
 			// orderNo, payMathod, 주문명.
 			// - 카카오 페이로 넘겨받은 결재정보값을 저장.
 			// payment.setOrderNum(Integer.parseInt(approveResponse.getItem_code()));
-			String id = principal.getName();
-
+			
+			int nine = 9;
+			LocalDateTime minusNine = approveResponse.getCreated_at().toLocalDateTime().minusHours(nine);
+			LocalDateTime minusNine2 = approveResponse.getApproved_at().toLocalDateTime().minusHours(nine);
+			Timestamp userGetCreated_at = Timestamp.valueOf(minusNine);
+			Timestamp userGetApproved_at = Timestamp.valueOf(minusNine2);
+			
 			Amount amount = approveResponse.getAmount();
 
 			payment.setPayedMethod(approveResponse.getPayment_method_type()); // 결제 수단
 			payment.setOrderNum(Integer.parseInt(approveResponse.getItem_code())); // 주문 번호
-			payment.setPayedDate(approveResponse.getCreated_at()); // 결제 시간
+			payment.setPayedDate(userGetCreated_at); // 결제 시간
 			payment.setPayedPrice(amount.getTotal()); // 총 금액
 			payment.setPayedVat(amount.getVat()); // 부가세
+			payment.setDiscountPrice(payCall.getCallDiscount()); // 할인금액
 			payment.setPayedCode(tid); // 결제 코드
 			payment.setUserId(id);
-			payment.setPayedOkDate(approveResponse.getApproved_at()); // 결제 완료 시간
+			payment.setPayedOkDate(userGetApproved_at); // 결제 완료 시간
+			
+			if(payCall.getCouponCode() != null || payCall.getCouponCode().equals("0")){
+				String cpUse = "Y";
+				CouponIssue couponIssue = new CouponIssue();
+				couponIssue.setCouponCode(payCall.getCouponCode());
+				couponIssue.setCpUse(cpUse);
+				couponIssue.setUserId(id);
+				couponIssue.setCouponUseDate(approveResponse.getCreated_at());
+				int result = couponService.updateCouponUse(couponIssue);
+			}
 
 			int insert = orderService.insertPayment(payment);
 
@@ -212,11 +259,13 @@ public class OrderController {
 					GoodUser isGoodUser = itdaUserService.isGoodUser(id);
 
 					Timestamp realTime = new Timestamp(System.currentTimeMillis());
-					Timestamp getEndDate;
-
+					
 					logger.info("completUser.getUserId() : " + completUser.getUserId());
+					logger.info("현재시간=============== : " + realTime.getTime());
 					try {
+						// 처음 결제하는 유저일 경우
 						if (completUser.getUserId() != null && isGoodUser == null) {
+							logger.info("==================처음 결제하는 유저 ================== : " );
 
 							goodUser.setPayedNum(completUser.getPayedNum());
 							goodUser.setFirstDate(completUser.getPayedOkDate());
@@ -225,11 +274,6 @@ public class OrderController {
 							goodUser.setProductTerm(completUser.getProductTerm());
 							goodUser.setEndDate(completUser.getPayedOkDate());
 							
-							//getEndDate.setTime(isGoodUser.getEndDate());
-							// Timestamp timestamp = completUser.getPayedOkDate();
-							// Timestamp getProductTerm =
-							// Timestamp.valueOf(String.valueOf(completUser.getProductTerm()));
-							// goodUser.setEndDate(timestamp.getTime() + getProductTerm.getTime());
 							logger.info("goodUser.setPayedNum : " + goodUser.getPayedNum());
 
 							logger.info("goodUser.getEndDate() = " + goodUser.getEndDate());
@@ -240,8 +284,10 @@ public class OrderController {
 							if(result == Constants.INSERT_SUCCESS) {
 								logger.info(Message.INSERT_SUCCESS);
 							}
-							// 현재 날짜보다 구독 만료일이 클 경우
-						} else if (isGoodUser.getEndDate().getTime() >= realTime.getTime()) {
+							// 유료 회원인데, 현재 날짜보다 구독 만료일이 클 경우
+						} else if (isGoodUser.getUserId() != null && isGoodUser.getEndDate() != null && isGoodUser.getEndDate().getTime() >= realTime.getTime()) {
+							
+							logger.info("===================유료 회원인데, 현재 날짜보다 구독 만료일이 클 경우 ================== : " );
 							
 							goodUser.setPayedNum(completUser.getPayedNum());
 							goodUser.setFirstDate(completUser.getFirstDate());
@@ -249,10 +295,6 @@ public class OrderController {
 							goodUser.setUserId(completUser.getUserId());
 							goodUser.setProductTerm(completUser.getProductTerm());
 							goodUser.setEndDate(isGoodUser.getEndDate());
-
-							// Timestamp endDate = goodUser.getEndDate();
-							// Timestamp getProductTerm =
-							// Timestamp.valueOf(String.valueOf(completUser.getProductTerm()));
 
 							logger.info("goodUser.getEndDate() = " + goodUser.getEndDate());
 
@@ -262,6 +304,8 @@ public class OrderController {
 							 }
 
 						}else {
+							logger.info("===============그 외의 결제유저 ================== : " );
+							
 							goodUser.setPayedNum(completUser.getPayedNum());
 							goodUser.setFirstDate(isGoodUser.getFirstDate());
 							goodUser.setStartDate(completUser.getPayedOkDate());
@@ -272,10 +316,12 @@ public class OrderController {
 							 int result = itdaUserService.updateResetPaymentUser(goodUser);
 							 if(result == Constants.UPDATE_SUCCESS) {
 								 logger.info(Message.PAYMENT_RESET_USER_UPDATE_SUCCESS);
+								 
 							 }
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
+						logger.info(Message.INSERT_FALL);
 					}
 				}
 			}
@@ -287,8 +333,6 @@ public class OrderController {
 		logger.info("payment.setPayedMethod" + payment.getPayedMethod());
 		logger.info("payment.setOrderNum" + payment.getOrderNum());
 
-		// int insert = orderService.InsertPayment(payment);
-		logger.info(Message.INSERT_SUCCESS);
 
 		return "redirect:/my/subscriptions";
 	}	
@@ -310,4 +354,75 @@ public class OrderController {
 		
 		return "product/payment_cancle";
 	}
+	
+	@RequestMapping(value="/subscriptions/info/refund")
+	public String payRefund(Principal principal,
+							RefundUser refundUser,
+							HttpServletRequest request,
+							@RequestParam("couponCode") String couponCode) {
+		
+		String id = principal.getName();
+		
+		refundUser.setUserId(id);
+		refundUser.setPayedNum(refundUser.getPayedNum());
+		refundUser.setPayedPrice(refundUser.getPayedPrice());
+		refundUser.setProductTerm(refundUser.getProductTerm());
+		
+		// 기존 유저가 쿠폰 사용자인지 확인되면 쿠폰 사용여부 업데이트
+		CouponIssue cpIssue = new CouponIssue();
+		cpIssue.setCouponCode(couponCode);
+		if(cpIssue.getCouponCode()!=null || Integer.parseInt(cpIssue.getCouponCode()) != 0) {
+			String cpUse = "N";
+			cpIssue.setCpUse(cpUse);
+			cpIssue.setUserId(id);
+			cpIssue.setCouponUseDate(null);
+			int result = couponService.updateCouponUse(cpIssue);
+		}
+		
+		RefundUser refundOrder = orderService.isPayRefundOrder(refundUser);
+		GoodUser goodUser = itdaUserService.isGoodUser(id);
+		logger.info("payment.setPayedNum : " + refundUser.getPayedNum());
+		logger.info("refundUser.getProductTerm()========= : " + refundUser.getProductTerm());
+       
+		KakaoCancelResponse kakaoCancelResponse = orderService.kakaoCancel(refundOrder);
+		
+		// 결제 환불하는 유저의 유료회원 테이블 업데이트
+		Timestamp nowTime = new Timestamp(System.currentTimeMillis());
+		
+		int productTermInDays = refundUser.getProductTerm();
+		
+		LocalDateTime plusDays = goodUser.getStartDate().toLocalDateTime().plusDays(productTermInDays);
+		LocalDateTime minusDays = goodUser.getEndDate().toLocalDateTime().minusDays(productTermInDays);
+		Timestamp productPeriodUse = Timestamp.valueOf(plusDays);
+		Timestamp userExpirationDate = Timestamp.valueOf(minusDays);
+		
+		
+		logger.info("nowTime ====== " + nowTime);
+		logger.info("productPeriodUse ====== " + productPeriodUse);
+		logger.info("userExpirationDate ====== " + userExpirationDate);
+		// endDate - productTerm > 오늘 날짜인 경우
+		if(userExpirationDate.after(nowTime)) {
+			refundUser.setEndDate(userExpirationDate);
+			
+			int result = orderService.updatePayRefundUser(refundUser);
+			int result2 = orderService.updatePayedStatusIsR(refundUser);
+			if(result > 0 && result2 > 0) {
+				logger.info(Message.REFUND_EXISTING_USER_UPDATE_SUCCESS);
+				request.setAttribute("msg", Message.PAYMENT_CANCLE);
+			}
+		// endDate - productTerm < startDate인 경우
+		}else{
+			refundUser.setEndDate(userExpirationDate);
+			int result = orderService.updatePayRefundUser(refundUser);
+			int result2 = orderService.updatePayedStatusIsR(refundUser);
+			
+			if(result > 0 && result2 > 0) {
+				logger.info(Message.REFUND_NEW_USER_UPDATE_SUCCESS);
+				request.setAttribute("msg", Message.PAYMENT_CANCLE);
+				request.setAttribute("msg", Message.PAYMENT_CANCLE);
+			}
+		}
+		
+		return "redirect:/product/cancel";
+    }
 }

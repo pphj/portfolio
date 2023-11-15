@@ -167,11 +167,12 @@ public class UserInfoController {
 									HttpServletRequest request) {
 			
 		session.removeAttribute("authCode");
-		request.getSession().getAttribute("authCode");
+		//request.getSession().getAttribute("authCode");
 		String authCode = generateAuthCode();
 		
 		session.setAttribute("authCode", authCode);
-		session.setMaxInactiveInterval(THREE_MINUTE_TIMER);
+		//session.setMaxInactiveInterval(THREE_MINUTE_TIMER);
+		//session.removeAttribute("authCode");
 		int result = 0;
 		
 		sendMail.emailAuthentication(email, authCode, vo);
@@ -180,6 +181,7 @@ public class UserInfoController {
 			result = Constants.CONNECT_SUCCESS;
 			logger.info("메일 전송에 성공하였습니다.");
 		}else {
+			result = Constants.MAIL_SEND_ERROR;
 			logger.info("메일 전송에 실패하였습니다.");
 		}
 		
@@ -198,9 +200,9 @@ public class UserInfoController {
 		logger.info("authCode : " + authCode +  "/ authNo : " + authNo);
 		int result = 0;
 		
-		if(authCode.equals(authCode)) {
+		if(authCode.equals(authNo)) {
 			
-			result = Constants.CONNECT_SUCCESS;
+			result = 200;
 			logger.info(Message.SUCCESS);
 			
 			return result;
@@ -457,19 +459,32 @@ public class UserInfoController {
 		int month = c.get(Calendar.MONTH) + 1;// 오늘 월 구합니다.
 		int date = c.get(Calendar.DATE);// 오늘 일 구합니다.
 
+		logger.info("유저폴더 생성 전" + saveFolder);
 		
 		File idPath1 = new File(saveFolder);
 		if (!(idPath1.exists()))
-		{
-			idPath1.mkdir();// 새로운 폴더를 생성
+		{	logger.info(saveFolder + "존재하지 않음");
+			
+			if (idPath1.mkdir()) {
+				logger.info("폴더 생성");
+				
+			}else {
+				logger.info("생성 실패ㅠㅠ");
+			}
 		}
 		
 		String homedir = saveFolder + "/" + year + "-" + month + "-" + date;
 		logger.info(homedir);
 		File path1 = new File(homedir);
 		if (!(path1.exists()))
-		{
-			path1.mkdir();// 새로운 폴더를 생성
+		{	
+			//path1.mkdir();// 새로운 폴더를 생성
+			if (path1.mkdir()) {
+				logger.info("폴더 생성");
+				
+			}else {
+				logger.info("생성 실패ㅠㅠ");
+			}
 		}
 
 		// 난수를 구합니다.
@@ -518,11 +533,11 @@ public class UserInfoController {
 			String fileName = uploadfile.getOriginalFilename(); // 원래 파일명
 
 
-			fileDBName = fileDBName(fileName, saveFolder + "/Member/" + id);
+			fileDBName = fileDBName(fileName, saveFolder + "Member/" + id);
 			logger.info("fileDBName = " + fileDBName);
 			
-			String userFolder = saveFolder + "/Member/" + id + File.separator + fileDBName;
-
+			String userFolder = saveFolder + "Member/" + id + File.separator + fileDBName;
+			
 			byte[] bytes = uploadfile.getBytes(); // 파일의 내용을 바이트 배열로 읽어옵니다.
 
 			Path path = Paths.get(userFolder); // 파일을 저장할 절대경로 객체(Path)
@@ -547,7 +562,7 @@ public class UserInfoController {
 		{// 수정 성공의 경우
 			logger.info("업데이트 완료");
 			// 수정한 글 내용을 보여주기 위해 글 내용 보기 페이지로 이동하기 위해 경로를 설정합니다.
-			return "redirect:/";
+			return "redirect:/user/myProfile";
 		}
 
 	}
@@ -578,14 +593,15 @@ public class UserInfoController {
 		return "mypage/userinfo/userLeaveReason";
 	}
 	
+	@ResponseBody
 	@PostMapping("/leaveAction")
-	public String leaveAction(Principal principal, 
+	public String leaveAction( 
 								UserLeaveReason leaveReason, 
 								HttpServletRequest request) {
 
-		String id = principal.getName();
+		
 
-		leaveReason.setUserId(id);
+		leaveReason.setUserId(leaveReason.getUserId());
 		leaveReason.setLeaveReason_id((leaveReason.getLeaveReason_id()));
 		leaveReason.setUserLeaveReason(leaveReason.getUserLeaveReason());
 
@@ -595,11 +611,11 @@ public class UserInfoController {
 			logger.info("탈퇴이유 insert 성공");
 
 			if (result == Constants.INSERT_SUCCESS) {
-				result = itdaUserService.deleteUserInsert(id);
+				result = itdaUserService.deleteUserInsert(leaveReason.getUserId());
 				System.out.println("탈퇴유저 insert 성공 :" + result);
 
 				
-				result = itdaUserService.itda_userDelete(id);
+				result = itdaUserService.itda_userDelete(leaveReason.getUserId());
 
 				if (result == Constants.DELETE_SUCCESS) {
 
@@ -608,13 +624,12 @@ public class UserInfoController {
 			}
 
 			logger.info("탈퇴 성공");
-			request.setAttribute("msg", Message.USER_LEAVE_SUCCESS);
+			return Message.USER_LEAVE_SUCCESS;
 
 		} else {
 			logger.info("회원 탈퇴 실패");
-			request.setAttribute("msg", Message.USER_LEAVE_FALL);
+			return  Message.USER_LEAVE_FALL;
 		}
-		return "mypage/userinfo/userLeaveAction";
 	}
 	
 

@@ -1,12 +1,11 @@
 package com.itda.ITDA;
 
+import net.sf.ehcache.config.CacheConfiguration;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import net.sf.ehcache.config.CacheConfiguration;
 
 @EnableCaching
 @Configuration
@@ -30,6 +29,8 @@ public class CacheConfig {
         config.addCache(getCacheConfiguration("selectchCate_Id", 60*10));
         config.addCache(getCacheConfiguration("product", 60*10));
         config.addCache(getCacheConfiguration("totalSalesList", 60*10));
+        config.addCache(getCacheConfiguration("itdaNotice", 60*10));
+        config.addCache(getCacheConfiguration("itdaNoticeList", 60*10));
         
         return net.sf.ehcache.CacheManager.newInstance(config);
     }
