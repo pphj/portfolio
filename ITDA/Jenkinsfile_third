@@ -1,6 +1,6 @@
 pipeline {
     environment { 
-        repository = "parkhj0209/security"  //docker hub id와 repository 이름
+        repository = "parkhj0209/itda-jenkins"  //docker hub id와 repository 이름
         DOCKERHUB_CREDENTIALS = credentials('dockerhub') // dockerhub : jenkins에 등록해 놓은 docker hub credentials 이름      
         TARGET_HOST = "ubuntu@3.35.18.165"
     }
