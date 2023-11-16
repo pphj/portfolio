@@ -15,7 +15,7 @@ pipeline {
         stage('Git Pull') {
             steps {
                  // Get some code from a GitHub repository
-                git branch: 'main', credentialsId: 'github('credentialsId에서 저장한 것), url: 'https://github.com/pphj/portfolio'
+                git branch: 'main', credentialsId: 'github', url: 'https://github.com/pphj/portfolio'
 
             }
             post {
