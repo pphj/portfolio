@@ -32,6 +32,7 @@ public class Itda_User implements UserDetails {
 	private Timestamp userJoindate;
 	private int statusId;
 	private Timestamp updateDate;
+	private Timestamp endDate;
 	private MultipartFile profile;
 	private String userProfile;
 	private String authName;

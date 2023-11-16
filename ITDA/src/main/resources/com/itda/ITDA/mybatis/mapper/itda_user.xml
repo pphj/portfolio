@@ -14,7 +14,7 @@
         insert into itda_user
         (userId, userPw, userName, userBirth, userGender, userPhone,
         userAddress1, userAddress2, userPost, userEmail, userCategory,
-        userJoindate, statusId, userProfile, endData, authName)
+        userJoindate, statusId, userProfile, endDate, authName)
         values(#{userId}, #{userPw}, #{userName}, #{userBirth}, #{userGender}, #{userPhone},
         #{userAddress1}, #{userAddress2}, #{userPost}, #{userEmail},
         #{userCategory},
