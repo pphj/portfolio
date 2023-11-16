@@ -33,7 +33,7 @@ pipeline {
         stage('Build') {
             steps {    
                 dir("ITDA"){   ///var/jenkins_home/workspace/test_item/Spring10_Security_War
-                    sh "mvn -DskipTests clean package"
+                    sh "mvn -DskipTests clean compile package"
                     }  
             }
             post {
